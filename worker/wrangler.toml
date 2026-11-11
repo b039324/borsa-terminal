@@ -1,0 +1,14 @@
+# İsteğe bağlı: komut satırından deploy etmek isterseniz (npx wrangler deploy).
+# Panelden elle yapıştırarak kurulum için bu dosyaya gerek yok (bkz. KURULUM.md).
+name = "borsa-terminal"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# KV oluşturup id'yi buraya yazın:  npx wrangler kv namespace create STORE
+[[kv_namespaces]]
+binding = "STORE"
+id = "BURAYA_KV_ID"
+
+# [vars]
+# ALLOWED_ORIGIN = "https://KULLANICI.github.io"
+# Şifre: npx wrangler secret put AUTH_PASSWORD
