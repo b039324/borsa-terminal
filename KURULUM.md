@@ -54,3 +54,14 @@ Sunucu, Docker ve aylık ücret yok. İki parça var:
 ## Yerelde deneme / geliştirme
 
 `test/` klasörü Yahoo'yu taklit eden bir test sunucusu içerir (`node test/harness.mjs`, sonra `node test/e2e.js`; Playwright gerekir). Bu sürümdeki teknik göstergeler, ilk sürümdeki Python/pandas hesaplarıyla karşılaştırılmış ve birebir aynı çıkmıştır.
+
+## Uygulama olarak yükleme (PWA)
+
+Site, kendi logosuyla uygulama gibi yüklenebilir (ayrı pencere, masaüstü/başlat menüsü simgesi):
+
+- **Chrome / Brave / Edge (bilgisayar):** adres çubuğunun sağındaki **yükle** simgesine ya da sayfadaki **⬇ Yükle** düğmesine tıklayın.
+- **Android (Chrome, Brave, Firefox):** menü → **Ana ekrana ekle / Uygulamayı yükle**.
+- **iPhone/iPad (Safari):** Paylaş → **Ana Ekrana Ekle**.
+- **Firefox (bilgisayar):** Firefox masaüstü sitelerin uygulama olarak yüklenmesini desteklemiyor; site normal çalışır, dilerseniz sekmeyi sabitleyebilirsiniz.
+
+Güncelleme yayınladığınızda uygulama bir sonraki açılışta yeni sürümü alır. Veriler (fiyat, portföy) önbelleğe alınmaz, her zaman canlı gelir.

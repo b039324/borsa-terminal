@@ -41,7 +41,7 @@ const yahoo = (u) => {
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (u, o) => (String(u.url || u).includes('yahoo.com') ? yahoo(String(u.url || u)) : realFetch(u, o));
 
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
+const MIME = { '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.svg': 'image/svg+xml', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css' };
 http.createServer(async (rq, rs) => {
   const url = new URL(rq.url, 'http://127.0.0.1:8793');
   if (url.pathname.startsWith('/api/')) {

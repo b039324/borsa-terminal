@@ -140,7 +140,7 @@ async function compare(symbolsCsv, range = '1y') {
 // ------------------------------------------------------------------ takip listesi
 async function watchlistList() {
   const st = await store.load();
-  const items = [...st.watchlist].sort((a, b) => (a.added_at < b.added_at ? -1 : a.added_at > b.added_at ? 1 : a.symbol < b.symbol ? -1 : 1));
+  const items = [...st.watchlist]; // kullanıcının belirlediği sıra (yeniler sona eklenir)
   const quotes = await dp.getQuotes(items.map((i) => i.symbol));
   return items.map((i) => {
     const q = quotes[i.symbol] || {};
@@ -201,6 +201,15 @@ const ROUTES = [
 
   ['GET', /^\/api\/watchlist$/, () => watchlistList()],
   ['POST', /^\/api\/watchlist$/, (m, q, b) => watchlistAdd(b)],
+  ['PUT', /^\/api\/watchlist\/order$/, async (m, q, b) => {
+    const want = Array.isArray(b.symbols) ? b.symbols.map((s) => String(s).toUpperCase()) : fail('Geçersiz sıra');
+    await store.mutate((d) => {
+      const pos = new Map(want.map((s, i) => [s, i]));
+      const rest = d.watchlist.filter((w) => !pos.has(w.symbol));
+      d.watchlist = [...d.watchlist.filter((w) => pos.has(w.symbol)).sort((a, b2) => pos.get(a.symbol) - pos.get(b2.symbol)), ...rest];
+    });
+    return { ok: true };
+  }],
   ['PUT', /^\/api\/watchlist\/([^/]+)\/note$/, async (m, q, b) => { const s = decodeURIComponent(m[1]).toUpperCase(); await store.mutate((d) => { const w = d.watchlist.find((x) => x.symbol === s); if (w) w.note = (b.note || '').slice(0, 300); }); return { ok: true }; }],
   ['DELETE', /^\/api\/watchlist\/([^/]+)$/, async (m) => { const s = decodeURIComponent(m[1]).toUpperCase(); await store.mutate((d) => { d.watchlist = d.watchlist.filter((x) => x.symbol !== s); }); return { ok: true }; }],
 

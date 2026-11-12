@@ -4,18 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Borsa Terminal</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234c8dff'/%3E%3Cpath d='M6 22l6-7 5 4 9-11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#0b0f17">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/logo.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Borsa">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header id="topbar">
-    <a class="logo" href="#/"><span class="logo-mark">▲</span><span class="logo-text">Borsa Terminal</span></a>
+    <a class="logo" href="#/"><img class="logo-img" src="icons/icon-192.png" alt="" width="26" height="26"><span class="logo-text">Borsa Terminal</span></a>
     <div class="search">
       <input id="search" type="search" placeholder="Hisse ara… (THYAO, GARAN, US:AAPL, ^GSPC)" autocomplete="off" aria-label="Sembol ara">
       <div id="suggest" class="suggest" hidden></div>
     </div>
     <div id="mkt-status" class="mkt-status"></div>
     <span id="demo-badge" class="badge warn" hidden title="Gerçek veri değil">DEMO VERİSİ</span>
+    <button id="install" class="btn sm" hidden title="Uygulamayı bu cihaza yükle">⬇ Yükle</button>
     <button id="logout" class="btn ghost sm" hidden title="Çıkış yap">Çıkış</button>
     <button id="theme" class="btn ghost sm" title="Tema (açık/koyu)" aria-label="Tema değiştir">🌓</button>
   </header>
@@ -35,7 +44,7 @@
   <div id="toasts"></div>
   <div id="login" class="login-overlay" hidden>
     <form id="login-form" class="card login-box" autocomplete="on">
-      <h1><span class="logo-mark">▲</span> Borsa Terminal</h1>
+      <h1><img src="icons/icon-192.png" alt="" width="28" height="28" style="border-radius:7px;vertical-align:middle"> Borsa Terminal</h1>
       <div class="muted small">Devam etmek için şifrenizi girin.</div>
       <input id="login-user" type="text" autocomplete="username" value="borsa" hidden>
       <input id="login-pw" type="password" autocomplete="current-password" placeholder="Şifre" required aria-label="Şifre">

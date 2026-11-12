@@ -242,4 +242,21 @@ async function boot() {
   }
 }
 
+// ------------------------------------------------------------- uygulama olarak yükleme (PWA)
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installEvt = e;
+  $('#install').hidden = false;
+});
+$('#install').addEventListener('click', async () => {
+  if (!installEvt) return;
+  installEvt.prompt();
+  await installEvt.userChoice;
+  installEvt = null;
+  $('#install').hidden = true;
+});
+window.addEventListener('appinstalled', () => { $('#install').hidden = true; });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => { /* kayıt olmazsa site yine çalışır */ });
+
 boot();

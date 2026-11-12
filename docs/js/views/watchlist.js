@@ -4,7 +4,7 @@ import { chg, big, esc, flash, px, rangeBar, short, skeleton, sortRows, toast } 
 export default {
   async mount(root, _p, ctx) {
     let rows = [];
-    let sort = { key: 'symbol', dir: 1 };
+    let sort = { key: null, dir: 1 }; // null = 'Benim sıram' (elle düzenlenen sıra)
     root.innerHTML = `
       <div class="page-head"><h2 class="page-title">Takip Listesi</h2>
         <form id="add" class="inline-form"><input name="symbol" placeholder="Sembol ekle (THYAO, US:AAPL…)" required maxlength="20"><button class="btn primary">Ekle</button></form>
@@ -17,9 +17,10 @@ export default {
     const paint = () => {
       const el = root.querySelector('#tbl');
       if (!rows.length) { el.innerHTML = '<div class="empty">Takip listeniz boş. Yukarıdan sembol ekleyin veya bir hisse sayfasında ★ simgesine basın.</div>'; built = false; return; }
-      const sorted = sortRows(rows, sort.key, sort.dir);
-      el.innerHTML = `<div class="table-wrap"><table class="tbl"><thead><tr>${head('symbol', 'Sembol')}${head('price', 'Fiyat', 'r')}${head('change', 'Değişim', 'r')}${head('change_pct', '%', 'r')}${head('volume', 'Hacim', 'r')}<th>Gün Aralığı</th><th>52 Hafta</th><th>Not</th><th></th></tr></thead>
+      const sorted = sort.key ? sortRows(rows, sort.key, sort.dir) : rows;
+      el.innerHTML = `<div class="table-wrap"><table class="tbl"><thead><tr><th class="sortable ord" data-k="" title="Kendi sıramı kullan">${sort.key ? '⇅' : '⇅ ✓'}</th>${head('symbol', 'Sembol')}${head('price', 'Fiyat', 'r')}${head('change', 'Değişim', 'r')}${head('change_pct', '%', 'r')}${head('volume', 'Hacim', 'r')}<th>Gün Aralığı</th><th>52 Hafta</th><th>Not</th><th></th></tr></thead>
         <tbody>${sorted.map((w) => `<tr data-sym="${esc(w.symbol)}">
+          <td class="ord"><span class="grip" draggable="true" title="Sürükleyerek taşı">⠿</span><span class="mv"><button class="btn ghost sm" data-up title="Yukarı taşı" aria-label="Yukarı">▲</button><button class="btn ghost sm" data-down title="Aşağı taşı" aria-label="Aşağı">▼</button></span></td>
           <td><a href="#/stock/${enc(w.symbol)}"><b>${esc(short(w.symbol))}</b></a><div class="muted small">${esc(w.name || '')}</div></td>
           <td class="r mono c-px"></td><td class="r mono c-chg"></td><td class="r c-pct"></td>
           <td class="r mono">${big(w.volume)}</td>
@@ -50,9 +51,63 @@ export default {
       if (!built || root.querySelectorAll('#tbl tbody tr').length !== rows.length) paint(); else update();
     };
 
+    // --- sıralama: görünen sırayı kalıcı "benim sıram" yapar
+    const shownOrder = () => [...root.querySelectorAll('#tbl tbody tr')].map((tr) => tr.dataset.sym);
+    const saveOrder = async (syms) => {
+      const pos = new Map(syms.map((s, i) => [s, i]));
+      rows = [...rows].sort((a, b) => pos.get(a.symbol) - pos.get(b.symbol));
+      sort = { key: null, dir: 1 };
+      paint();
+      try { await api.put('/api/watchlist/order', { symbols: syms }); } catch (err) { toast(err.message, 'err', 6000); await load(); }
+    };
+    let dragSym = null;
+    root.addEventListener('dragstart', (e) => {
+      const tr = e.target.closest && e.target.closest('tr[data-sym]');
+      if (!tr || !e.target.classList.contains('grip')) return;
+      dragSym = tr.dataset.sym;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragSym);
+      e.dataTransfer.setDragImage(tr, 10, 10);
+      tr.classList.add('dragging');
+    });
+    const clearMarks = () => root.querySelectorAll('.drop-above,.drop-below,.dragging').forEach((x) => x.classList.remove('drop-above', 'drop-below', 'dragging'));
+    root.addEventListener('dragover', (e) => {
+      const tr = dragSym && e.target.closest && e.target.closest('tr[data-sym]');
+      if (!tr) return;
+      e.preventDefault();
+      const after = e.clientY > tr.getBoundingClientRect().top + tr.offsetHeight / 2;
+      root.querySelectorAll('.drop-above,.drop-below').forEach((x) => x.classList.remove('drop-above', 'drop-below'));
+      if (tr.dataset.sym !== dragSym) tr.classList.add(after ? 'drop-below' : 'drop-above');
+    });
+    root.addEventListener('drop', (e) => {
+      const tr = dragSym && e.target.closest && e.target.closest('tr[data-sym]');
+      if (!tr) return;
+      e.preventDefault();
+      const after = e.clientY > tr.getBoundingClientRect().top + tr.offsetHeight / 2;
+      const order = shownOrder().filter((s) => s !== dragSym);
+      const i = order.indexOf(tr.dataset.sym);
+      order.splice(tr.dataset.sym === dragSym ? order.length : i + (after ? 1 : 0), 0, dragSym);
+      const from = dragSym;
+      dragSym = null;
+      clearMarks();
+      if (tr.dataset.sym !== from) saveOrder(order);
+    });
+    root.addEventListener('dragend', () => { dragSym = null; clearMarks(); });
+
     root.addEventListener('click', async (e) => {
+      const mv = e.target.closest('[data-up],[data-down]');
+      if (mv) {
+        const sym = mv.closest('tr').dataset.sym, order = shownOrder(), i = order.indexOf(sym), j = i + (mv.hasAttribute('data-up') ? -1 : 1);
+        if (j >= 0 && j < order.length) { [order[i], order[j]] = [order[j], order[i]]; await saveOrder(order); }
+        return;
+      }
       const th = e.target.closest('th.sortable');
-      if (th) { sort = { key: th.dataset.k, dir: sort.key === th.dataset.k ? -sort.dir : 1 }; paint(); return; }
+      if (th) {
+        const k = th.dataset.k;
+        sort = !k ? { key: null, dir: 1 } : { key: k, dir: sort.key === k ? -sort.dir : 1 };
+        paint();
+        return;
+      }
       const del = e.target.closest('[data-del]');
       if (del) {
         await api.del(`/api/watchlist/${enc(del.closest('tr').dataset.sym)}`);
