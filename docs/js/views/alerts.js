@@ -55,6 +55,6 @@ export default {
     });
 
     await load();
-    ctx.poll(() => load().catch(() => {}), 30000);
+    ctx.poll(() => load().catch(() => {}), 15000);
   },
 };

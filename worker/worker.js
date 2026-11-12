@@ -185,9 +185,9 @@ function parseChart(j) {
   };
 }
 
-async function loadChart(env, req, symbol, range, interval, events = false) {
-  const ttl = /m$|^1h$/.test(interval) && interval !== "1mo" ? 30 : 300;
-  return cached(req, `chart|${symbol}|${range}|${interval}|${events}`, ttl, async () => {
+async function loadChart(env, req, symbol, range, interval, events = false, ttlOverride = null) {
+  const ttl = ttlOverride ?? (/m$|^1h$/.test(interval) && interval !== "1mo" ? 30 : 300);
+  return cached(req, `chart|${symbol}|${range}|${interval}|${events}|${ttl}`, ttl, async () => {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${range}&interval=${interval}&includePrePost=false&events=${events ? "div" : "history"}`;
     return parseChart(await yahooJson(url, { env }));
   });
@@ -198,7 +198,12 @@ function quoteFrom(symbol, ch) {
   const n = c.length;
   const price = m.price ?? (n ? c[n - 1] : null);
   // önceki kapanış: bugünkü (devam eden) mumdan bir önceki günlük kapanış
-  const prev = n > 1 ? c[n - 2] : m.prev;
+  // Önceki kapanış: son günlük mum "bugünün" mumuysa bir önceki mum; bugünün mumu henüz oluşmadıysa
+  // (açılış öncesi / Yahoo gecikmesi) son mum zaten önceki kapanıştır.
+  const day = (ts) => new Date((ts + (m.gmtoffset || 0)) * 1000).toISOString().slice(0, 10);
+  const lastDay = n ? day(ch.t[n - 1]) : null, mktDay = m.time ? day(m.time) : null;
+  const todayBarMissing = lastDay && mktDay && mktDay > lastDay;
+  const prev = n === 0 ? m.prev : todayBarMissing ? c[n - 1] : n > 1 ? c[n - 2] : m.prev;
   const win = ch.h.slice(-252), lw = ch.l.slice(-252);
   return {
     symbol, name: m.name, price, prev_close: prev, open: m.open ?? (n ? ch.o[n - 1] : null),
@@ -325,7 +330,7 @@ async function handle(req, env, url) {
   if (p === "/api/quotes") {
     const syms = (q.get("symbols") || "").split(",").filter(Boolean).slice(0, MAX_BATCH);
     if (!syms.length || !syms.every(validSymbol)) return reply(env, req, { error: "Geçersiz parametre" }, 400);
-    const res = await mapLimit(syms, 6, async (s) => quoteFrom(s, await loadChart(env, req, s, "5d", "1d")));
+    const res = await mapLimit(syms, 6, async (s) => quoteFrom(s, await loadChart(env, req, s, "5d", "1d", false, 8)));
     return reply(env, req, Object.fromEntries(syms.map((s, i) => [s, res[i]])));
   }
 

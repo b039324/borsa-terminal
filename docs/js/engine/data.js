@@ -143,7 +143,7 @@ export async function getQuotes(symbols) {
   const now = Date.now();
   for (const s of symbols) {
     const hit = cache.get(`quote|${s}`);
-    if (hit && now - hit.t < 30000) out[s] = hit.v; else need.push(s);
+    if (hit && now - hit.t < 10000) out[s] = hit.v; else need.push(s);
   }
   for (let i = 0; i < need.length; i += 12) {
     const ch = need.slice(i, i + 12);

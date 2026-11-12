@@ -184,6 +184,6 @@ export default {
     });
 
     await reload();
-    ctx.poll(() => loadSummary().catch(() => {}), 30000);
+    ctx.poll(() => loadSummary().catch(() => {}), 15000);
   },
 };

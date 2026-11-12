@@ -81,7 +81,7 @@ export default {
 
     const safe = (fn) => fn().catch((e) => console.warn(e));
     await Promise.all([safe(loadOverview), safe(loadMovers), safe(loadMini)]);
-    ctx.poll(() => safe(loadOverview), 30000);
+    ctx.poll(() => safe(loadOverview), 15000);
     ctx.poll(() => safe(loadMovers), 60000);
     ctx.poll(() => safe(loadMini), 60000);
   },

@@ -234,7 +234,7 @@ async function boot() {
   window.addEventListener('hashchange', navigate);
   navigate();
   refreshTape(); refreshStatus(); pollAlerts();
-  setInterval(() => { if (!document.hidden) refreshTape(); }, 30000);
+  setInterval(() => { if (!document.hidden) refreshTape(); }, 15000);
   setInterval(refreshStatus, 60000);
   setInterval(() => { if (!document.hidden) pollAlerts(); }, 60000);
   if ('Notification' in window && Notification.permission === 'default') {

@@ -9,7 +9,7 @@ export default {
       <div class="page-head"><h2 class="page-title">Takip Listesi</h2>
         <form id="add" class="inline-form"><input name="symbol" placeholder="Sembol ekle (THYAO, US:AAPL…)" required maxlength="20"><button class="btn primary">Ekle</button></form>
       </div>
-      <section class="card"><div id="tbl">${skeleton(3)}</div><div class="muted small foot">Fiyatlar ~15 dk gecikmeli · 30 sn'de bir yenilenir · <span id="upd"></span></div></section>`;
+      <section class="card"><div id="tbl">${skeleton(3)}</div><div class="muted small foot">Fiyatlar ~15 dk gecikmeli · 15 sn'de bir yenilenir · <span id="upd"></span></div></section>`;
 
     const head = (k, label, cls = '') => `<th class="sortable ${cls}" data-k="${k}">${label}${sort.key === k ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`;
     let built = false;
@@ -132,6 +132,6 @@ export default {
     });
 
     try { await load(); } catch (e) { root.querySelector('#tbl').innerHTML = `<div class="err">⚠ ${esc(e.message)}</div>`; }
-    ctx.poll(() => load().catch(() => {}), 30000);
+    ctx.poll(() => load().catch(() => {}), 15000);
   },
 };

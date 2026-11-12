@@ -79,7 +79,7 @@ export default {
           else if (!['5y', 'max'].includes(state.range)) ctl?.updateLast(quote.price);
         }
       } catch { /* geçici hata */ }
-    }, 30000);
+    }, 15000);
 
     // ------------------------------------------------------------ butonlar
     $$el('#b-star').addEventListener('click', async (e) => {
