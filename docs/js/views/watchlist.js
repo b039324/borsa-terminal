@@ -8,8 +8,9 @@ export default {
     root.innerHTML = `
       <div class="page-head"><h2 class="page-title">Takip Listesi</h2>
         <form id="add" class="inline-form"><input name="symbol" placeholder="Sembol ekle (THYAO, US:AAPL…)" required maxlength="20"><button class="btn primary">Ekle</button></form>
+        <button type="button" class="btn sm edit-toggle" id="edit">Düzenle</button>
       </div>
-      <section class="card"><div id="tbl">${skeleton(3)}</div><div class="muted small foot">Fiyatlar ~15 dk gecikmeli · 15 sn'de bir yenilenir · <span id="upd"></span></div></section>`;
+      <section class="card" id="wl"><div id="tbl">${skeleton(3)}</div><div class="muted small foot">Fiyatlar ~15 dk gecikmeli · 15 sn'de bir yenilenir · <span id="upd"></span></div></section>`;
 
     const head = (k, label, cls = '') => `<th class="sortable ${cls}" data-k="${k}">${label}${sort.key === k ? (sort.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`;
     let built = false;
@@ -119,6 +120,11 @@ export default {
         await api.put(`/api/watchlist/${enc(e.target.closest('tr').dataset.sym)}/note`, { note: e.target.value });
         toast('Not kaydedildi', 'ok', 1500);
       }
+    });
+    // mobil: "Düzenle" sıralama, not ve silme kontrollerini açar (masaüstünde düğme gizli)
+    root.querySelector('#edit').addEventListener('click', (e) => {
+      const on = root.querySelector('#wl').classList.toggle('editing');
+      e.target.textContent = on ? 'Bitti' : 'Düzenle';
     });
     root.querySelector('#add').addEventListener('submit', async (e) => {
       e.preventDefault();

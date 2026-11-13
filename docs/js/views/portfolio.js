@@ -53,7 +53,7 @@ export default {
         <section class="card" id="alloc"></section>
       </div>
       <section class="card"><h3>Portföy Değeri (güncel kurla, ₺)</h3><div id="hist" class="chart short"></div><div class="muted small">Yatırılan = alışlar − satışlar (net nakit akışı). Tarihsel kur kullanılmaz.</div></section>
-      <section class="card"><h3>İşlem Ekle</h3>
+      <section class="card tx-sheet" id="tx-sheet"><h3>İşlem Ekle</h3>
         <form id="tx" class="form-grid">
           <label>Sembol<input name="symbol" required maxlength="20" placeholder="THYAO"></label>
           <label>İşlem<select name="type"><option value="BUY">Alış</option><option value="SELL">Satış</option><option value="DIVIDEND">Temettü</option></select></label>
@@ -65,8 +65,11 @@ export default {
           <button class="btn primary">Kaydet</button>
         </form>
         <div class="muted small">Temettü için adet = sahip olunan lot, fiyat = hisse başına temettü. Satışlar eldeki adedi aşamaz. Maliyet yöntemi: ağırlıklı ortalama.</div>
+        <button type="button" class="btn ghost sheet-close" id="tx-close">Vazgeç</button>
       </section>
-      <section class="card"><h3>İşlem Geçmişi</h3><div id="txs">${skeleton(1)}</div></section>`;
+      <section class="card"><h3>İşlem Geçmişi</h3><div id="txs">${skeleton(1)}</div></section>
+      <div class="sheet-back" id="tx-back"></div>
+      <button type="button" class="fab" id="tx-fab" aria-label="İşlem ekle">＋ İşlem</button>`;
 
     const sel = root.querySelector('#pf-select');
     const fillSelect = (list) => { sel.innerHTML = list.map((p) => `<option value="${p.id}" ${p.id === pid ? 'selected' : ''}>${esc(p.name)}</option>`).join(''); };
@@ -167,12 +170,18 @@ export default {
       if (!s) return toast('Önce sembol girin', 'err', 2000);
       try { q('#tx').price.value = (await api.get(`/api/stock/${enc(s)}/quote`)).price; } catch (err) { toast(err.message, 'err'); }
     });
+    // mobil: işlem formu alttan açılan panel (masaüstünde bu düğmeler gizli, form sayfada durur)
+    const setSheet = (on) => { q('#tx-sheet').classList.toggle('open', on); q('#tx-back').classList.toggle('open', on); };
+    q('#tx-fab').addEventListener('click', () => setSheet(true));
+    q('#tx-back').addEventListener('click', () => setSheet(false));
+    q('#tx-close').addEventListener('click', () => setSheet(false));
     q('#tx').addEventListener('submit', async (e) => {
       e.preventDefault();
       const f = Object.fromEntries(new FormData(e.target));
       try {
         await api.post(`/api/portfolios/${pid}/transactions`, { ...f, quantity: +f.quantity, price: +f.price, fee: +f.fee });
         toast('İşlem kaydedildi', 'ok');
+        setSheet(false);
         e.target.quantity.value = ''; e.target.price.value = ''; e.target.note.value = '';
         reload();
       } catch (err) { toast(err.message, 'err', 7000); }
