@@ -18,7 +18,7 @@ export default {
       panes: new Set(store.get('panes', ['rsi', 'macd'])),
       tab: 'chart',
     };
-    let quote, chartData, ctl, inWatch = false;
+    let quote, chartData, ctl, inWatch = false, wlItem = null;
     const loaded = {};
 
     root.innerHTML = skeleton(2);
@@ -31,7 +31,7 @@ export default {
     if (!ctx.alive()) return;
     sym = quote.symbol;
     if (decodeURIComponent(location.hash.split('/stock/')[1] || '') !== sym) history.replaceState(null, '', `#/stock/${enc(sym)}`);
-    try { inWatch = (await api.get('/api/watchlist')).some((w) => w.symbol === sym); } catch { /* yoksay */ }
+    try { wlItem = (await api.get('/api/watchlist')).find((w) => w.symbol === sym) || null; inWatch = !!wlItem; } catch { /* yoksay */ }
 
     root.innerHTML = `
       <div class="stock-head card">
@@ -52,6 +52,7 @@ export default {
         </div>
       </div>
       <div class="statrow card" id="stats"></div>
+      <section class="card" id="note-card"></section>
       <div class="tabs" role="tablist">${TABS.map(([k, l]) => `<button class="tab ${k === 'chart' ? 'active' : ''}" role="tab" data-tab="${k}">${l}</button>`).join('')}</div>
       <div id="tabbody"></div>`;
 
@@ -67,8 +68,38 @@ export default {
         ['Önceki Kapanış', px(q.prev_close)], ['Açılış', px(q.open)], ['Gün Aralığı', rangeBar(q.low, q.high, q.price)],
         ['52 Hafta', rangeBar(q.year_low, q.year_high, q.price)], ['Hacim', big(q.volume)], ['Piyasa Değeri', q.market_cap ? big(q.market_cap) : '—'],
       ].map(([k, v]) => `<div class="stat"><div class="label">${k}</div><div class="v">${v}</div></div>`).join('');
+      const dist = $$el('#note-dist');
+      if (dist && wlItem) dist.innerHTML = distText(wlItem.target, q.price);
     };
     paintQuote();
+
+    // ------------------------------------------------------------ not ve hedef fiyat (takip listesi kaydına yazılır)
+    function distText(t, price) {
+      if (!(t > 0) || !(price > 0)) return '';
+      return t <= price ? '<span class="up">Hedefe ulaştı</span>' : `<span>Hedefe ${pct(((t - price) / price) * 100, 1)} uzak</span>`;
+    }
+    function paintNote() {
+      const el = $$el('#note-card');
+      if (!wlItem) { el.innerHTML = '<h4>Notum ve hedef</h4><div class="muted small">Not ve hedef fiyat takip listesindeki hisseler içindir. Önce “Takibe Al”a basın.</div>'; return; }
+      el.innerHTML = `<h4>Notum ve hedef</h4>
+        <form id="note-form" class="form-grid">
+          <label>Hedef fiyat (${esc(curSym(quote.currency))})<input name="target" type="number" step="any" min="0" value="${wlItem.target ?? ''}"></label>
+          <div class="note-dist mono" id="note-dist">${distText(wlItem.target, quote.price)}</div>
+          <label class="note-text">Not<textarea name="note" rows="3" maxlength="300" placeholder="Neden takipteyim, ne bekliyorum…">${esc(wlItem.note || '')}</textarea></label>
+          <button class="btn primary">Kaydet</button>
+        </form>`;
+      el.querySelector('#note-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const f = e.target, target = f.target.value === '' ? null : +f.target.value;
+        try {
+          await api.put(`/api/watchlist/${enc(sym)}/note`, { note: f.note.value, target });
+          wlItem = { ...wlItem, note: f.note.value, target: target ?? undefined };
+          el.querySelector('#note-dist').innerHTML = distText(target, quote.price);
+          toast('Not ve hedef kaydedildi', 'ok', 1800);
+        } catch (err) { toast(err.message, 'err'); }
+      });
+    }
+    paintNote();
 
     ctx.poll(async () => {
       try {
@@ -86,6 +117,8 @@ export default {
       try {
         if (inWatch) await api.del(`/api/watchlist/${enc(sym)}`); else await api.post('/api/watchlist', { symbol: sym });
         inWatch = !inWatch;
+        wlItem = inWatch ? { symbol: sym, note: '' } : null;
+        paintNote();
         e.target.textContent = inWatch ? '★ Takipte' : '☆ Takibe Al';
         toast(inWatch ? 'Takip listesine eklendi' : 'Listeden çıkarıldı', 'ok', 2000);
       } catch (err) { toast(err.message, 'err'); }

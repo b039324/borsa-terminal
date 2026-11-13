@@ -118,3 +118,13 @@ textarea { padding: 12px 14px; }
 /* ---- modal → alttan panel ---- */
 .modal-back { place-items: end center; padding: 0; }
 .modal { width: 100%; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+
+/* 9 sekme: yatay kaydırmalı alt çubuk, bist sırası */
+#side { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+#side::-webkit-scrollbar { display: none; }
+#side a { flex: 0 0 20%; }
+#side a[data-nav="/watchlist"] { order: 1; } #side a[data-nav="/portfolio"] { order: 2; } #side a[data-nav="/markets"] { order: 3; }
+#side a[data-nav="/heatmap"] { order: 4; } #side a[data-nav="/signals"] { order: 5; } #side a[data-nav="/"] { order: 6; }
+#side a[data-nav="/screener"] { order: 7; } #side a[data-nav="/compare"] { order: 8; } #side a[data-nav="/alerts"] { order: 9; }
+.hm { margin-left: -4px; margin-right: -4px; width: calc(100% + 8px); }
+.mrow { min-height: 66px; }

@@ -8,6 +8,7 @@ import * as scr from './screener.js';
 import { computeAll } from './ind.js';
 import { technicalSummary, pivots, performance, candlePatterns } from './analysis.js';
 import { OVERVIEW, UNIVERSES } from './universe.js';
+import { sectorOf } from './sectors.js';
 
 const fail = (msg) => { throw new Error(msg); };
 const r4 = (x) => Math.round(x * 1e4) / 1e4;
@@ -197,6 +198,13 @@ const ROUTES = [
   ['GET', /^\/api\/stock\/([^/]+)\/financials$/, (m, q) => financials(decodeURIComponent(m[1]), q.get('period') === 'quarterly' ? 'quarterly' : 'annual')],
   ['GET', /^\/api\/stock\/([^/]+)\/news$/, async (m) => { try { return await dp.getNews(await sym(decodeURIComponent(m[1]))); } catch { return []; } }],
   ['GET', /^\/api\/compare$/, (m, q) => compare(q.get('symbols') || '', q.get('range') || '1y')],
+  ['GET', /^\/api\/market\/universe$/, async (m, q) => {
+    const u = q.get('universe') || 'bist30';
+    const syms = UNIVERSES[u] || fail(`Bilinmeyen evren: ${u}`);
+    const qs = await dp.getQuotes(syms);
+    const rows = syms.filter((s) => qs[s]).map((s) => { const x = qs[s]; return { symbol: s, name: x.name, sector: sectorOf(s), price: x.price, change_pct: x.change_pct, volume: x.volume, turnover: (x.volume || 0) * (x.price || 0), updated: x.updated }; });
+    return { universe: u, count: syms.length, rows };
+  }],
   ['GET', /^\/api\/screener$/, async (m, q) => { const u = q.get('universe') || 'bist30'; if (!UNIVERSES[u]) fail(`Bilinmeyen evren: ${u}`); return { universe: u, count: UNIVERSES[u].length, rows: await scr.scan(u) }; }],
 
   ['GET', /^\/api\/watchlist$/, () => watchlistList()],
@@ -210,7 +218,18 @@ const ROUTES = [
     });
     return { ok: true };
   }],
-  ['PUT', /^\/api\/watchlist\/([^/]+)\/note$/, async (m, q, b) => { const s = decodeURIComponent(m[1]).toUpperCase(); await store.mutate((d) => { const w = d.watchlist.find((x) => x.symbol === s); if (w) w.note = (b.note || '').slice(0, 300); }); return { ok: true }; }],
+  ['PUT', /^\/api\/watchlist\/([^/]+)\/note$/, async (m, q, b) => {
+    const s = decodeURIComponent(m[1]).toUpperCase();
+    await store.mutate((d) => {
+      const w = d.watchlist.find((x) => x.symbol === s) || fail(`${s} takip listesinde değil`);
+      w.note = (b.note || '').slice(0, 300);
+      if ('target' in b) { // hedef fiyat: yalnız gönderildiyse değişir; boş/0 ise silinir
+        if (b.target != null && b.target !== '' && !(+b.target > 0)) fail('Hedef fiyat pozitif olmalı');
+        if (b.target != null && b.target !== '') w.target = +b.target; else delete w.target;
+      }
+    });
+    return { ok: true };
+  }],
   ['DELETE', /^\/api\/watchlist\/([^/]+)$/, async (m) => { const s = decodeURIComponent(m[1]).toUpperCase(); await store.mutate((d) => { d.watchlist = d.watchlist.filter((x) => x.symbol !== s); }); return { ok: true }; }],
 
   ['GET', /^\/api\/portfolios$/, async () => (await store.load()).portfolios],

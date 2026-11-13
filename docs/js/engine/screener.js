@@ -21,6 +21,11 @@ export async function scan(universe = 'bist30') {
         above_sma50: 'SMA 50' in ma ? close > ma['SMA 50'] : null, above_sma200: 'SMA 200' in ma ? close > ma['SMA 200'] : null,
         ret_1a: perf.returns?.['1A'] ?? null, ret_3a: perf.returns?.['3A'] ?? null, from_high_pct: perf.from_high_pct ?? null,
         signal: summ.verdict_all.label, score: summ.verdict_all.score, trend: summ.trend ?? null,
+        // sinyal skoru (engine/signals.js) için ek alanlar
+        trend_up: 'SMA 50' in ma && 'SMA 200' in ma ? close > ma['SMA 50'] && ma['SMA 50'] > ma['SMA 200'] : null,
+        trend_down: 'SMA 50' in ma && 'SMA 200' in ma ? close < ma['SMA 50'] && ma['SMA 50'] < ma['SMA 200'] : null,
+        macd_above_signal: summ.oscillators.some((o) => o.name.startsWith('MACD') && o.signal === 'AL') ? true : summ.oscillators.some((o) => o.name.startsWith('MACD')) ? false : null,
+        ret_1y: perf.returns?.['1Y'] ?? null,
       });
     } catch (e) { console.warn('tarama', sym, e); }
   }

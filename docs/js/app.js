@@ -11,6 +11,9 @@ import portfolio from './views/portfolio.js';
 import screener from './views/screener.js';
 import compare from './views/compare.js';
 import alerts from './views/alerts.js';
+import markets from './views/markets.js';
+import heatmap from './views/heatmap.js';
+import signals from './views/signals.js';
 
 const routes = [
   [/^\/$/, dashboard],
@@ -20,6 +23,9 @@ const routes = [
   [/^\/screener$/, screener],
   [/^\/compare$/, compare],
   [/^\/alerts$/, alerts],
+  [/^\/markets$/, markets],
+  [/^\/heatmap$/, heatmap],
+  [/^\/signals$/, signals],
 ];
 
 let cleanups = [];
@@ -44,6 +50,7 @@ async function navigate() {
   const view = $('#view');
   const c = ctx();
   $$('#side a').forEach((a) => a.classList.toggle('active', a.dataset.nav === '/' ? path === '/' : path.startsWith(a.dataset.nav)));
+  $('#side a.active')?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
   for (const [re, mod] of routes) {
     const m = path.match(re);
     if (m) {
