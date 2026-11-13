@@ -1,7 +1,7 @@
 // Servis çalışanı: uygulama kabuğunu önbelleğe alır (hızlı açılış, çevrimdışı iskelet).
 // Veri istekleri (Worker, başka köken) asla önbelleğe alınmaz: fiyatlar ve portföy her zaman canlı gelir.
-const VERSION = 'borsa-v1';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/app.js', 'js/api.js', 'js/config.js', 'js/util.js', 'js/charts.js',
+const VERSION = 'borsa-v3';
+const SHELL = ['./', 'index.html', 'css/style.css', 'css/mobile.css', 'js/app.js', 'js/api.js', 'js/config.js', 'js/util.js', 'js/charts.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'manifest.webmanifest'];
 
 self.addEventListener('install', (e) => {
